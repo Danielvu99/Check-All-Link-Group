@@ -1,1154 +1,1260 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>打开链接按照组</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f4;
-    }
-
-    h1 {
-      text-align: center;
-    }
-
-    #groupButtons {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    #groupButtons button {
-      margin: 5px;
-      padding: 10px 16px;
-      background-color: #007BFF;
-      color: white;
-      border: none;font-size:20pt;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    #groupButtons button:hover {
-      background-color: #0056b3;
-    }
-
-    .link-container {
-      margin: 10px;
-      border: 1px solid #ccc;
-      padding: 8px;
-      background-color: white;
-      border-radius: 4px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      display: inline-block;
-      width: 23%;
-      vertical-align: top;
-      box-sizing: border-box;
-    }
-
-    .link-url {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 14px;
-      font-weight: bold;
-      color: #333;
-      word-wrap: break-word;
-    }
-
-    .link-iframe {
-      width: 100%;
-      height: 180px;
-      border: none;
-      border-radius: 4px;
-    }
-
-    #linkDisplay {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    @media (max-width: 768px) {
-      .link-container {
-        width: 48%;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .link-container {
-        width: 100%;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>KTtenmienIP-Pro</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#1c1f26; --card:#161a20;
+    --border:#2a2f38; --text:#e5e5e5;
+    --accent:#39e58c; --blue:#4f8cff; --red:#ff3b3b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{padding:14px;background:var(--bg);color:var(--text);
+       font-family:Segoe UI,Tahoma,sans-serif}
+  .header{display:flex;justify-content:space-between;align-items:center;
+          margin-bottom:10px;gap:12px;flex-wrap:wrap}
+  .left{display:flex;align-items:center;gap:12px}
+  .logo{font-size:22px;color:var(--red);font-weight:700}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tabs button,.batch button{
+    background:var(--panel);color:#ccc;border:1px solid #333;font-size:18pt;
+    padding:6px 14px;border-radius:6px;cursor:pointer}
+  .tabs button.active{background:var(--accent);color:#000;font-weight:700}
+  .stats{font-size:20pt;color:#6fa8ff}
+  .batch{display:grid;grid-template-columns:repeat(30,1fr);
+         gap:6px;margin-bottom:10px}
+  .batch button{padding:6px;border-radius:5px}
+  .batch button.active{background:var(--blue);color:#000;font-weight:700}
+  .batch button.nav{background:#2a2f38;color:#fff;font-weight:700}
+  .batch button.nav:hover{background:#3a404c}
+  .batch button:disabled{opacity:.3;cursor:not-allowed}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .card{background:var(--card);border:1px solid var(--border);
+        border-radius:6px;overflow:hidden}
+  .card-header{display:flex;justify-content:space-between;align-items:center;
+               padding:4px 6px;font-size:11px;background:#1f2430}
+  .card-header a{color:#7aa2ff;text-decoration:none;max-width:75%;
+                 overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  /* Nút OPEN mới nằm ở header */
+  .btn-open-header{
+    font-size:12px;padding:2px 8px;border:none;border-radius:3px;
+    background:#1e8e3e;color:#fff;cursor:pointer;font-weight:bold;
+  }
+  .btn-open-header:hover{background:#2aa84d}
+  
+  .iframe-box{height:220px;overflow:hidden;background:#0b0d11}
+  .iframe-inner{transform:scale(.38);transform-origin:top left;
+                width:260%;height:260%}
+  .iframe-inner iframe{width:100%;height:100%;border:none;background:#0b0d11}
+  .card-wrap{position:relative}
+  .tools{position:absolute;bottom:6px;right:6px;display:flex;gap:4px}
+  .tools button{font-size:15px;padding:1px 5px;border:none;
+                border-radius:4px;background:var(--border);
+                color:#ccc;cursor:pointer}
+  .tools button:hover{background:#3a404c}
+  /* Nút LOAD giờ nằm ở tools */
+  .tools .btn-load{background:#1e8e3e;color:#fff}
+  .tools .btn-load:hover{background:#2aa84d}
+</style>
 </head>
 <body>
 
-  <h1>Mở Link Theo Nhóm Tự Động</h1>
+<div class="header">
+  <div class="left">
+    <div class="logo">⚡ Open All link ⚡</div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+  <div class="stats">
+    Batch <span id="statBatch">1</span> |
+    Total: <span id="statTotal">0</span>
+  </div>
+</div>
 
-  <div id="groupButtons"></div>
-  <div id="linkDisplay"></div>
+<div class="batch" id="batchBar"></div>
+<div class="grid" id="grid"></div>
 
-  <script>
-    // ==== DANH SÁCH LINK MẪU ====
-    const linkGroups = {
-	"王中王": [
-	"https://iiiiiiiiiiiiii.49778.cyou",
-	"https://iiiiiiiiiiiiii.89884.com",
-	"https://89884.com",
-	"https://iiiiiiiiiiiiii.975456.com",
-	"https://www.975456.men",
-	"https://975456.men",
-	"https://www.975456.cc",
-	"https://975456.cc",
-	"https://975456.com",
-	"https://www.975456.com",
-	"https://iiiiiiiiiiiiii.49297.cyou",
-	"https://iiiiiiiiiiiiii.49241.cyou",
-	"https://iiiiiiiiiiiiii.49584.top",
-	"https://iiiiiiiiiiiiii.49148.cyou",
-	"https://iiiiiiiiiiiiii.49089.cyou",
-	"https://iiiiiiiiiiiiii.49035.cyou",
-	"https://iiiiiiiiiiiiii.49026.cyou",
-	"https://iiiiiiiiiiiiii.49878.top",
-	"https://iiiiiiiiiiiiii.49786.top",
-	"https://iiiiiiiiiiiiii.49752.top",
-	"https://iiiiiiiiiiiiii.49692.top",
-	"https://iiiiiiiiiiiiii.49511.top",
-	"https://iiiiiiiiiiiiii.49059.top",
-	"https://iiiiiiiiiiiiii.4249.men",
-	"https://lhjt.4948.men",
-	"https://faike.4948.men",
-	"https://h8.49806.xyz",
-	"https://h7.49806.xyz",
-	"https://h6.49806.xyz",
-	"https://h5.49806.xyz",
-	"https://wzw4.49806.xyz",
-	"https://wzw3.49806.xyz",
-	"https://wzw2.49806.xyz",
-	"https://wzw1.49806.xyz",
-	"https://3zu.49032.xyz",
-	"https://853349.com",
-	"https://www.532349.com",
-	"https://532349.com",
-	"https://www.857949.com",
-	"https://857949.com",
-	"https://www.945959.com",
-	"https://945959.com",
-	"https://www.853349.com",
-	"https://www.862049.com",
-	"https://862049.com",
-	"https://www.861949.com",
-	"https://861949.com",
-	"https://www.2333300.com",
-	"https://2333300.com",
-	"https://www.2333311.com",
-	"https://2333311.com",
-	"https://www.2333322.com",
-	"https://2333322.com",
-	"https://www.567486.com",
-	"https://567486.com",
-	"https://www.886843.com",
-	"https://886843.com",
-	"https://www.886470.com",
-	"https://886470.com",
-	"https://h5.886470.com",
-	"https://h5.532349.com",
-	"https://www.886394.com",
-	"https://886394.com",
-	"https://www.886175.com",
-	"https://886175.com",
-	"https://www.886174.com",
-	"https://886174.com",
-	"https://www.886190.com",
-	"https://886190.com",
-	"https://www.7222444.com",
-	"https://7222444.com",
-	"https://www.7222111.com",
-	"https://7222111.com",
-	"https://www.7222000.com",
-	"https://7222000.com",
-	"https://www.49285.cc",
-	"https://49285.cc",
-	"https://www.49382.cc",
-	"https://49382.cc",
-	"https://www.49488.vip",
-	"https://49488.vip",
-	"https://www.855577.com",
-	"https://855577.com",
-	"https://www.55382.org",
-	"https://55382.org",
-	"https://www.55382.me",
-	"https://55382.me",
-	"https://www.299977.com",
-	"https://299977.com",
-	"https://www.811177.com",
-	"https://811177.com",
-	"https://www.833377.com",
-	"https://833377.com",
-	"https://www.911177.com",
-	"https://911177.com",
-	"https://www.866677.com",
-	"https://866677.com",
-	"https://www.55382.vip",
-	"https://55382.vip",
-	"https://www.2333344.com",
-	"https://2333344.com",
-	"https://www.2333355.com",
-	"https://2333355.com",
-	"https://www.456904.com",
-	"https://456904.com",
-	"https://h5.456904.com",
-	"https://www.2333366.com",
-	"https://2333366.com",
-	"https://www.2333377.com",
-	"https://2333377.com",
-	"https://www.499810.com",
-	"https://499810.com",
-	"https://h5.499810.com",
-	"https://www.294340.com",
-	"https://h5.294340.com",
-	"https://294340.com",
-	"https://wzw.xn--i1b8agg9e6a1e2cdx1h.xn--h2brj9c",
-	"https://iiiiiiiiiiiiii.49232.link",
-	"https://tiaozhaun92.49738.xyz",
-	"https://h6.49738.xyz",
-	"https://h5.49738.xyz"],
-    "满堂红": [
-	"https://63229.com",
-	"https://www.63229.com",
-	"https://iiiiiiiiiiiiii.63229.com",
-	"https://iiiiiiiiiiiiii.49263.link",
-	"https://iiiiiiiiiiiiii.49094.top",
-	"https://iiiiiiiiiiiiii.49021.link",
-	"https://iiiiiiiiiiiiii.49326.cyou",
-	"https://iiiiiiiiiiiiii.149567.com",
-	"https://iiiiiiiiiiiiii.49811.cyou",
-	"https://149567.cc",
-	"https://www.149567.cc",
-	"https://149567.com",
-	"https://www.149567.com",
-	"https://iiiiiiiiiiiiii.49263.link",
-	"https://iiiiiiiiiiiiii.49117.cyou",
-	"https://iiiiiiiiiiiiii.49604.top",
-	"https://iiiiiiiiiiiiii.49659.top",
-	"https://iiiiiiiiiiiiii.49479.top",
-	"https://iiiiiiiiiiiiii.49094.top",
-	"https://iiiiiiiiiiiiii.49021.link",
-	"https://h6.49887.xyz",
-	"https://h5.49887.xyz",
-	"https://h5.49313.xyz",
-	"https://yh65-2.xn--v1bm3av2dc7aue0dcdk3qi.xn--h2brj9c",
-	"https://4777700.com",
-	"https://www.4777711.com",
-	"https://4777711.com",
-	"https://www.886485.com",
-	"https://886485.com",
-	"https://h5.886485.com",
-	"https://www.633849.com",
-	"https://633849.com",
-	"https://h5.633849.com",
-	"https://www.4777722.com",
-	"https://4777722.com",
-	"https://www.4777733.com",
-	"https://4777733.com",
-	"https://www.789834.com",
-	"https://789834.com",
-	"https://h5.789834.com",
-	"https://www.4777744.com",
-	"https://4777744.com",
-	"https://www.499717.com",
-	"https://499717.com",
-	"https://h5.499717.com",
-	"https://www.293948.com",
-	"https://293948.com",
-	"https://h5.293948.com",
-	"https://www.49398.cc",
-	"https://49398.cc",
-	"https://www.498507.com",
-	"https://www.26249.cc",
-	"https://498507.com",
-	"https://26249.cc",
-	"https://h5.498507.com",
-	"https://www.52549.cc",
-	"https://www.4777755.com",
-	"https://52549.cc",
-	"https://4777755.com",
-	"https://www.226849.com",
-	"https://226849.com",
-	"https://www.546488.com",
-	"https://546488.com",
-	"https://www.546488.cc",
-	"https://546488.cc",
-	"https://www.265649.com",
-	"https://265649.com",
-	"https://www.632649.com",
-	"https://632649.com",
-	"https://www.528349.com",
-	"https://528349.com",
-	"https://www.547488.com",
-	"https://547488.com",
-	"https://www.547488.cc",
-	"https://5zu-10.xn--11bt2brb7fm5d.xn--h2brj9c",
-	"https://547488.cc",
-	"https://www.664524.com",
-	"https://664524.com",
-	"https://www.49398.vip",
-	"https://49398.vip",
-	"https://www.8999000.com",
-	"https://8999000.com",
-	"https://www.8999222.com",
-	"https://8999222.com",
-	"https://www.789421.com",
-	"https://789421.com",
-	"https://www.885706.com",
-	"https://885706.com",
-	"https://www.9111333.com",
-	"https://9111333.com",
-	"https://www.9333111.com",
-	"https://9333111.com",
-	"https://www.4777700.com"],
-	"曾道人": [
-	"https://66550149.com",
-	"https://iiiiiiiiiiiiiiiiii.66550149.com",
-	"https://66990149.com",
-	"https://iiiiiiiiiiiiiiiiii.66990149.com",
-	"https://98554.com",
-	"https://www.807234.com",
-	"https://807234.com",
-	"https://807234.cc",
-	"https://www.807234.cc",
-	"https://69234.vip",
-	"https://www.69234.vip",
-	"https://iiiiiiiiiiiiiiiiii.807234.com",
-	"https://98554.com",
-	"https://iiiiiiiiiiiiiiiiii.98554.com",
-	"https://iiiiiiiiiiiiiiiiii.490416.cyou",
-	"https://iiiiiiiiiiiiiiiiii.490175.cyou",
-	"https://iiiiiiiiiiiiiiiiii.490024.cyou",
-	"https://iiiiiiiiiiiiiiiiii.49848.cyou",
-	"https://lhjt.49901.men",
-	"https://iiiiiiiiiiiiiiiiii.49598.xyz",
-	"https://tz2.49598.xyz",
-	"https://xcstz-3.xn--21b5ar1c7a2c.xn--h2brj9c",
-	"https://iiiiiiiiiiiiiiiiii.vsiium.com",
-	"https://iiiiiiiiiiiiiiiiii.tmeagh.com",
-	"https://iiiiiiiiiiiiiiiiii.490220.cyou",
-	"https://iiiiiiiiiiiiiiiiii.49948.cyou",
-	"https://iiiiiiiiiiiiiiiiii.49753.cyou",
-	"https://iiiiiiiiiiiiiiiiii.49264.cyou",
-	"https://iiiiiiiiiiiiiiiiii.49057.cyou",
-	"https://iiiiiiiiiiiiiiiiii.49030.cyou",
-	"https://iiiiiiiiiiiiiiiiii.49849.top",
-	"https://iiiiiiiiiiiiiiiiii.49548.top",
-	"https://iiiiiiiiiiiiiiiiii.49025.top",
-	"https://iiiiiiiiiiiiiiiiii.49050.link",
-	"https://h6.49166.xyz",
-	"https://h5.49498.xyz",
-	"https://h5.49166.xyz",
-	"https://2zu.49024.xyz",
-	"https://6782266.com",
-	"https://www.6782266.com",
-	"https://www.6923411.com",
-	"https://6923411.com",
-	"https://www.69234dh.com",
-	"https://69234dh.com",
-	"https://294221.com",
-	"https://www.69234.vip",
-	"https://www.294221.com",
-	"https://69234.vip",
-	"https://h5.294221.com",
-	"https://www.6923400.com",
-	"https://499851.com",
-	"https://6923400.com",
-	"https://www.499851.com",
-	"https://www.6923433.com",
-	"https://h5.499851.com",
-	"https://6923433.com",
-	"https://h5.499038.com",
-	"https://www.499038.com",
-	"https://499038.com",
-	"https://www.6923422.com",
-	"https://www.6781166.com",
-	"https://6781166.com",
-	"https://478986.com",
-	"https://www.015551.com",
-	"https://www.478986.com",
-	"https://015551.com",
-	"https://6923422.com",
-	"https://478983.com",
-	"https://www.49572.cc",
-	"https://iiiiiiiiiiiiiiiiii.490221.cyou",
-	"https://3553552.com",
-	"https://49572.cc",
-	"https://wz.6923433.com",
-	"https://2667799.com",
-	"https://www.3553552.com",
-	"https://www.2667799.com",
-	"https://wz.6923422.com",
-	"https://www.69234.co",
-	"https://www.12666888.com",
-	"https://www.886023.com",
-	"https://886023.com",
-	"https://69234.co",
-	"https://122609.com",
-	"https://www.122609.com",
-	"https://www.5858234.com",
-	"https://www.69234.biz",
-	"https://122509.com",
-	"https://5858234.com",
-	"https://69234.biz",
-	"https://www.122509.com",
-	"https://www.5858456.com",
-	"https://5858456.com",
-	"https://69234g.com",
-	"https://www.69234g.com",
-	"https://www.5858567.com",
-	"https://69234f.com",
-	"https://5858567.com",
-	"https://www.69234f.com",
-	"https://69234e.com",
-	"https://www.69234e.com",
-	"https://69234d.com",
-	"https://www.69234d.com",
-	"https://69234c.com",
-	"https://www.69234c.com",
-	"https://34999.vip",
-	"https://www.34999.vip",
-	"https://69234b.com",
-	"https://www.69234b.com",
-	"https://69234a.com",
-	"https://www.69234a.com",
-	"https://h5.492150.com",
-	"https://478980.com",
-	"https://www.492150.com",
-	"https://www.478980.com",
-	"https://492150.com",
-	"https://www.478983.com",
-	"https://www.69234dh.org",
-	"https://69234dh.org",
-	"https://xcs.xn--i1baa8eb1gc3a1bbuxfs1g0ee8b0hdbg.xn--h2brj9c",
-	"https://yh12-1.xn--11bag4cycbd2b1a2dddcef3t.xn--h2brj9c",
-	"https://xcs.xn----rtd0d9chn7e2al6d2dsa.xn--h2brj9c"],
-	"大赢家": [
-	"https://99660149.com",
-	"https://iiiiiiiiiiiii.99660149.com",
-	"https://iiiiiiiiiiiii.993234.com",
-	"https://80776.com",
-	"https://iiiiiiiiiiiii.80776.com",
-	"https://www.993234.cc",
-	"https://www.993234.com",
-	"https://993234.com",
-	"https://993234.cc",
-	"https://562456.com",
-	"https://497004.com",
-	"https://iiiiiiiiiiiii.562456.com",
-	"https://497003.com",
-	"https://www.497003.com",
-	"https://iiiiiiiiiiiii.497003.com",
-	"https://497004.com",
-	"https://www.497004.com",
-	"https://iiiiiiiiiiiii.497004.com",
-	"https://82447.com",
-	"https://www.723234.com",
-	"https://723234.com",
-	"https://723234.cc",
-	"https://www.723234.cc",
-	"https://723234.vip",
-	"https://www.723234.vip",
-	"https://iiiiiiiiiiiii.723234.com",
-	"https://iiiiiiiiiiiii.82447.com",
-	"https://iiiiiiiiiiiii.49876.cyou",
-	"https://iiiiiiiiiiiii.490373.cyou",
-	"https://iiiiiiiiiiiii.490374.cyou",	
-	"https://iiiiiiiiiiiii.49281.link",
-	"https://iiiiiiiiiiiii.49274.link",
-	"https://lhjt.4986.men",
-	"https://iiiiiiiiiiiii.49857.cyou",
-	"https://lqrtz-3.xn--m1b3ddm1b8arfh0ch5a6gwc.xn--h2brj9c",
-	"https://iiiiiiiiiiiii.nukpinl.com",
-	"https://iiiiiiiiiiiii.ioolknp.com",
-	"https://iiiiiiiiiiiii.49888.cyou",
-	"https://iiiiiiiiiiiii.49831.cyou",
-	"https://iiiiiiiiiiiii.49350.cyou",
-	"https://iiiiiiiiiiiii.49226.cyou",
-	"https://iiiiiiiiiiiii.49138.cyou",
-	"https://iiiiiiiiiiiii.49760.top",
-	"https://iiiiiiiiiiiii.49639.top",
-	"https://iiiiiiiiiiiii.49458.top",
-	"https://sz1.49803.xyz",
-	"https://sz2.49803.xyz",
-	"https://sz3.49803.xyz",
-	"https://iiiiiiiiiiiii.49116.top",
-	"https://iiiiiiiiiiiii.49001.link",
-	"https://sz4.49803.xyz",
-	"https://sz3.49803.xyz",
-	"https://sz2.49803.xyz",
-	"https://sz1.49803.xyz",
-	"https://sz.xn--i1b4cvbirku8hya2ci.xn--h2brj9c",
-	"https://491912.com",
-	"https://www.491912.com",
-	"https://h5.491912.com",
-	"https://499875.com",
-	"https://www.499875.com",
-	"https://h5.499875.com",
-	"https://2235555.com",
-	"https://www.2235555.com",
-	"https://h5.832366.cc",
-	"https://h5.668147.com",
-	"https://832366.cc",
-	"https://668147.com",
-	"https://www.668147.com",
-	"https://3000033.com",
-	"https://www.3000033.com",
-	"https://3000022.com",
-	"https://www.3000022.com",
-	"https://3000011.com",
-	"https://www.3000011.com",
-	"https://523049.com",
-	"https://886763.com",
-	"https://www.523049.com",
-	"https://www.886763.com",
-	"https://525949.com",
-	"https://885376.com",
-	"https://www.525949.com",
-	"https://www.885376.com",
-	"https://566749.com",
-	"https://www.832366.cc",
-	"https://664416.com",
-	"https://www.566749.com",
-	"https://www.664416.com",
-	"https://253511.cc",
-	"https://2234444.com",
-	"https://154488.com",
-	"https://www.253511.cc",
-	"https://www.154488.com",
-	"https://www.2234444.com",
-	"https://253511.com",
-	"https://2231111.com",
-	"https://www.253511.com",
-	"https://519949.com",
-	"https://252249.com",
-	"https://www.2231111.com",
-	"https://www.252249.com",
-	"https://www.519949.com",
-	"https://h5.252249.com",
-	"https://49936.cc",
-	"https://www.49936.cc",
-	"https://3000044.com",
-	"https://49935.cc",
-	"https://www.3000044.com",
-	"https://www.49935.cc",
-	"https://h5.49244.xyz",
-	"https://iiiiiiiiiiiii.49830.cyou",
-	"https://iiiiiiiiiiiii.49444.cyou",
-	"https://iiiiiiiiiiiii.49440.cyou",
-	"https://iiiiiiiiiiiii.49434.cyou",
-	"https://iiiiiiiiiiiii.49389.cyou",
-	"https://iiiiiiiiiiiii.49349.cyou",
-	"https://iiiiiiiiiiiii.49137.cyou",
-	"https://iiiiiiiiiiiii.49754.top",
-	"https://iiiiiiiiiiiii.49643.top",
-	"https://iiiiiiiiiiiii.49460.top",
-	"https://iiiiiiiiiiiii.49332.top",
-	"https://iiiiiiiiiiiii.49120.top",
-	"https://iiiiiiiiiiiii.49011.link",
-	"https://cbg4.49779.xyz",
-	"https://cbg3.49779.xyz",
-	"https://cbg2.49779.xyz",
-	"https://cbg1.49779.xyz",
-	"https://h5.49321.xyz",
-	"https://cbg.xn--71brlj3e9a4a9ad7b.xn--h2brj9c",
-	"https://6373333.com",
-	"https://www.6373333.com",
-	"https://h5.499176.com",
-	"https://499176.com",
-	"https://www.499176.com",
-	"https://499089.com",
-	"https://www.499089.com",
-	"https://h5.499089.com",
-	"https://6372222.com",
-	"https://www.6372222.com",
-	"https://6371111.com",
-	"https://www.6371111.com",
-	"https://886903.com",
-	"https://www.886903.com",
-	"https://h5.886903.com",
-	"https://h5.678873.com",
-	"https://678873.com",
-	"https://www.678873.com",
-	"https://h5.678840.com",
-	"https://678840.com",
-	"https://www.678840.com",
-	"https://2554444.com",
-	"https://www.2554444.com",
-	"https://h5.668101.com",
-	"https://668101.com",
-	"https://www.668101.com",
-	"https://2774444.com",
-	"https://www.2774444.com",
-	"https://2664444.com",
-	"https://www.2664444.com",
-	"https://2661111.com",
-	"https://www.2661111.com",
-	"https://2551111.com",
-	"https://www.2551111.com",
-	"https://857649.com",
-	"https://www.857649.com",
-	"https://27949.cc",
-	"https://www.27949.cc",
-	"https://49576.cc",
-	"https://www.49576.cc",
-	"https://49574.cc",
-	"https://www.49574.cc",
-	"https://2664444.com",
-	"https://www.2664444.com",
-	"https://2661111.com",
-	"https://www.2661111.com",
-	"https://2551111.com",
-	"https://www.2551111.com",
-	"https://857649.com",
-	"https://www.857649.com",
-	"https://27949.cc",
-	"https://www.27949.cc",
-	"https://49576.cc",
-	"https://www.49576.cc",
-	"https://49574.cc",
-	"https://www.49574.cc",
-	"https://iiiiiiiiiiiii.49825.cyou",
-	"https://iiiiiiiiiiiii.49344.cyou",
-	"https://iiiiiiiiiiiii.49132.cyou",
-	"https://iiiiiiiiiiiii.49017.cyou",
-	"https://iiiiiiiiiiiii.49748.top",
-	"https://iiiiiiiiiiiii.49764.top",
-	"https://iiiiiiiiiiiii.49641.top",
-	"https://iiiiiiiiiiiii.49464.top",
-	"https://iiiiiiiiiiiii.49111.top",
-	"https://iiiiiiiiiiiii.2549.men",
-	"https://iiiiiiiiiiiii.490071.cyou",	
-	"https://lqr4.49784.xyz",
-	"https://lqr3.49784.xyz",
-	"https://lqr2.49784.xyz",
-	"https://lqr1.49784.xyz",
-	"https://www.886242.com",
-	"https://789576.com",
-	"https://h5.49167.xyz",
-	"https://1777766.com",
-	"https://www.1777766.com",
-	"https://49624.cc",
-	"https://www.49624.cc",
-	"https://www.578511.com",
-	"https://468511.com",
-	"https://www.468511.com",
-	"https://h5.886490.com",
-	"https://886490.com",
-	"https://www.886490.com",
-	"https://8222111.com",
-	"https://www.8222111.com",
-	"https://3777766.com",
-	"https://www.3777766.com",
-	"https://6462222.com",
-	"https://6464444.com",
-	"https://578511.com",
-	"https://49962.cc",
-	"https://www.49962.cc",
-	"https://www.6464444.com",
-	"https://49483.cc",
-	"https://www.6462222.com",
-	"https://www.49483.cc",
-	"https://492245.com",
-	"https://233355.com",
-	"https://www.233355.com",
-	"https://www.492245.com",
-	"https://49623.cc",
-	"https://h5.492245.com",
-	"https://www.49623.cc",
-	"https://499726.com",
-	"https://886242.com",
-	"https://34877.vip",
-	"https://www.499726.com",
-	"https://www.34877.vip",
-	"https://h5.499726.com",
-	"https://6461111.com",
-	"https://www.6461111.com",
-	"https://h5.499054.com",
-	"https://422217.com",
-	"https://499054.com",
-	"https://www.499054.com",
-	"https://www.422217.com",
-	"https://h5.789576.com",
-	"https://www.789576.com",
-	"https://h5.886242.com"],
-    "东方赌圣": [
-	"https://iiiiiiiiiiiii.57998.com",
-	"https://www.57998.com",
-	"https://57998.com",
-	"https://iiiiiiiiiiiii.914789.com",
-	"https://www.914789.com",
-	"https://914789.cc",
-	"https://www.914789.cc",
-	"https://iiiiiiiiiiiii.49244.link",
-	"https://dh.4902.men",
-	"https://dh.4903.men",
-	"https://iiiiiiiiiiiii.49796.cyou",
-	"https://iiiiiiiiiiiii.49314.cyou",
-	"https://iiiiiiiiiiiii.49105.cyou",
-	"https://iiiiiiiiiiiii.490109.cyou",
-	"https://iiiiiiiiiiiii.49676.top",
-	"https://iiiiiiiiiiiii.49592.top",
-	"https://iiiiiiiiiiiii.49493.top",
-	"https://iiiiiiiiiiiii.49889.xyz",
-	"https://iiiiiiiiiiiii.49136.top",
-	"https://iiiiiiiiiiiii.49083.top",
-	"https://iiiiiiiiiiiii.49339.link",
-	"https://iiiiiiiiiiiii.49299.link",
-	"https://iiiiiiiiiiiii.49041.link",
-	"https://iiiiiiiiiiiii.49991.cyou",
-	"https://bba.49991.men",
-	"https://lhjt.49991.men",
-	"https://lhjt.4968.men",
-	"https://shamatal.4969.men",
-	"https://qiedefei-k.4971.men",
-	"https://ausiq.4907.men",
-	"https://zda.4906.men",
-	"https://h5.4907.men",
-	"https://h5.4906.men",
-	"https://h5.4905.men",
-	"https://df4.49828.xyz",
-	"https://df3.49828.xyz",
-	"https://df2.49828.xyz",
-	"https://df1.49828.xyz",
-	"https://www.49863.cc",
-	"https://49863.cc",
-	"https://www.49863.vip",
-	"https://49863.vip",
-	"https://www.32549.cc",
-	"https://32549.cc",
-	"https://www.267349.com",
-	"https://267349.com",
-	"https://www.715366.com",
-	"https://715366.com",
-	"https://www.529449.com",
-	"https://529449.com",
-	"https://www.716366.com",
-	"https://716366.com",
-	"https://www.3888800.com",
-	"https://3888800.com",
-	"https://www.3888811.com",
-	"https://3888811.com",
-	"https://www.918844.com",
-	"https://918844.com",
-	"https://www.789640.com",
-	"https://789640.com",
-	"https://www.1555511.com",
-	"https://1555511.com",
-	"https://www.1555522.com",
-	"https://1555522.com",
-	"https://www.886041.com",
-	"https://886041.com",
-	"https://www.886045.com",
-	"https://886045.com",
-	"https://www.166676.com",
-	"https://166676.com",
-	"https://www.1555544.com",
-	"https://1555544.com",
-	"https://www.1555566.com",
-	"https://1555566.com",
-	"https://www.1555577.com",
-	"https://1555577.com",
-	"https://h5.267349.com",
-	"https://www.1555588.com",
-	"https://1555588.com",
-	"https://www.1555599.com",
-	"https://1555599.com",
-	"https://www.499892.com",
-	"https://499892.com",
-	"https://www.499894.com",
-	"https://499894.com",
-	"https://h5.293914.com",
-	"https://www.293914.com",
-	"https://293914.com",
-	"https://www.479234.com",
-	"https://479234.com",
-	"https://www.479234.cc",
-	"https://479234.cc",
-	"https://dfds.xn--p1b8caezwija9b6abe2fg2uddbc.xn--h2brj9c",
-	"https://www.1555500.com",
-	"https://1555500.com",
-	"https://www.1555533.com",
-	"https://1555533.com"],
-    "金钥匙网": [
-	"https://lhjt.49922.men",
-	"https://www.729456.cc",
-	"https://729456.cc",
-	"https://729456.com",
-	"https://www.729456.com",
-	"https://497012.com",
-	"https://www.497012.com",
-	"https://iiiiiiiiiiiiii.497012.com",
-	"https://iiiiiiiiiiiii.729456.com",
-	"https://iiiiiiiiiiiii.49271.link",
-	"https://iiiiiiiiiiiii.49122.cyou",
-	"https://iiiiiiiiiiiii.490331.cyou",
-	"https://iiiiiiiiiiiii.490332.cyou",
-	"https://iiiiiiiiiiiii.490127.cyou",
-	"https://iiiiiiiiiiiii.49655.top",
-	"https://iiiiiiiiiiiii.49585.top",
-	"https://iiiiiiiiiiiii.49472.top",
-	"https://iiiiiiiiiiiii.49100.top",
-	"https://iiiiiiiiiiiii.490047.cyou",
-	"https://lhjt.49951.men",
-	"https://h6.49904.xyz",
-	"https://h5.49904.xyz",
-	"https://h5.49296.xyz",
-	"https://www.789436.com",
-	"https://789436.com",
-	"https://www.885769.com",
-	"https://885769.com",
-	"https://www.8777000.com",
-	"https://8777000.com",
-	"https://www.8777222.com",
-	"https://www.49529.cc",
-	"https://49529.cc",
-	"https://www.49537.cc",
-	"https://49537.cc",
-	"https://www.27249.cc",
-	"https://27249.cc",
-	"https://www.675488.cc",
-	"https://675488.cc",
-	"https://1054444.com",
-	"https://664287.com",
-	"https://www.668445.com",
-	"https://www.647349.com",
-	"https://www.8666000.com",
-	"https://668445.com",
-	"https://8666000.com",
-	"https://647349.com",
-	"https://www.8666111.com",
-	"https://www.526749.com",
-	"https://h5.678493.com",
-	"https://www.886760.com",
-	"https://h5.668445.com",
-	"https://526749.com",
-	"https://886760.com",
-	"https://h5.886760.com",
-	"https://h5.647349.com",
-	"https://www.479456.com",
-	"https://479456.com",
-	"https://www.678493.com",
-	"https://www.479456.cc",
-	"https://479456.cc",
-	"https://h5.491754.com",
-	"https://www.491754.com",
-	"https://678493.com",
-	"https://www.676488.cc",
-	"https://491754.com",
-	"https://www.499764.com",
-	"https://676488.cc",
-	"https://8666111.com",
-	"https://www.664287.com",
-	"https://www.675488.com",
-	"https://499764.com",
-	"https://h5.499764.com",
-	"https://675488.com",
-	"https://8777222.com",
-	"https://www.668212.com",
-	"https://668212.com",
-	"https://h5.668212.com",
-	"https://www.1051111.com",
-	"https://1051111.com",
-	"https://www.1054444.com",
-	"https://iiiiiiiiiiiiiii.49334.cyou",
-	"https://jys.xn--m1b6h.xn--h2brj9c",
-	"https://asdfghjklzxcv.49814.cyou"],  
-	"红姐论坛": [
-	"https://hj.xn--m1bc1gh4c3af9dbce7o.xn--h2brj9c",
-	"https://iiiiiiiiiiiii.49662.top",
-	"https://iiiiiiiiiiiii.49588.top",
-	"https://iiiiiiiiiiiii.49480.top",
-	"https://www.727456.com",
-	"https://iiiiiiiiiiiii.49095.top",
-	"https://iiiiiiiiiiiii.49116.cyou",
-	"https://iiiiiiiiiiiii.490123.cyou",
-	"https://iiiiiiiiiiiii.490323.cyou",
-	"https://iiiiiiiiiiiii.490324.cyou",
-	"https://iiiiiiiiiiiii.490043.cyou",
-	"https://iiiiiiiiiiiii.49810.cyou",
-	"https://iiiiiiiiiiiii.5949.men",
-	"https://hjlt.4962.men",
-	"https://hjzd.4953.men",
-	"https://h6.49295.xyz",
-	"https://h6.49880.xyz",
-	"https://h5.49880.xyz",
-	"https://www.668202.com",
-	"https://h5.49295.xyz",
-	"https://5zu.49056.xyz",
-	"https://668202.com",
-	"https://1212sgs.76069.com",
-	"https://76069.com",
-	"https://aaadddd.727456.com",
-	"https://727456.vip",
-	"https://www.727456.vip",
-	"https://727456.com",
-	"https://www.499763.com",
-	"https://499763.com",
-	"https://h5.499763.com",
-	"https://www.319456.com",
-	"https://319456.com",
-	"https://www.319456.cc",
-	"https://319456.cc",
-	"https://www.328456.com",
-	"https://www.49528.cc",
-	"https://328456.com",
-	"https://www.328456.cc",
-	"https://49528.cc",
-	"https://328456.cc",
-	"https://h5.491743.com",
-	"https://www.49528.vip",
-	"https://www.491743.com",
-	"https://49528.vip",
-	"https://491743.com",
-	"https://www.26949.cc",
-	"https://www.616488.com",
-	"https://www.820366.cc",
-	"https://26949.cc",
-	"https://616488.com",
-	"https://820366.cc",
-	"https://www.616488.cc",
-	"https://www.615488.cc",
-	"https://h5.820366.cc",
-	"https://www.886756.com",
-	"https://615488.cc",
-	"https://616488.cc",
-	"https://886756.com",
-	"https://www.627349.com",
-	"https://www.862849.com",
-	"https://www.567498.com",
-	"https://h5.886756.com",
-	"https://862849.com",
-	"https://567498.com",
-	"https://www.7666444.com",
-	"https://www.2555000.com",
-	"https://7666444.com",
-	"https://www.615488.com",
-	"https://2555000.com",
-	"https://www.8324444.com",
-	"https://615488.com",
-	"https://www.2555222.com",
-	"https://8324444.com",
-	"https://www.789435.com",
-	"https://2555222.com",
-	"https://627349.com",
-	"https://789435.com",
-	"https://www.526649.com",
-	"https://www.885720.com"],
-    "铁算盘": [
-	"https://iiiiiiiiiiiiii.49774.cyou",
-	"https://iiiiiiiiiiiiii.95335.com",
-	"https://www.95335.com",
-	"https://95335.com",
-	"https://iiiiiiiiiiiiii.49184.cyou",
-	"https://iiiiiiiiiiiiii.49157.cyou",
-	"https://iiiiiiiiiiiiii.490093.cyou",
-	"https://iiiiiiiiiiiiii.490246.cyou",
-	"https://iiiiiiiiiiiiii.490247.cyou",	
-	"https://iiiiiiiiiiiiii.49082.cyou",
-	"https://iiiiiiiiiiiiii.49966.cyou",	
-	"https://iiiiiiiiiiiiii.49815.top",
-	"https://iiiiiiiiiiiiii.49319.top",
-	"https://iiiiiiiiiiiiii.49772.top",
-	"https://iiiiiiiiiiiiii.49696.top",
-	"https://iiiiiiiiiiiiii.49434.top",
-	"https://iiiiiiiiiiiiii.49521.top",
-	"https://iiiiiiiiiiiiii.49058.top",
-	"https://iiiiiiiiiiiiii.4349.men",
-	"https://iiiiiiiiiiiiii.960234.com",
-	"https://iiiiiiiiiiiiii.49099.link",
-	"https://lhsoa.492331.com",
-	"https://h6.492236.com",
-	"https://h6.492331.com",
-	"https://h5.492236.com",
-	"https://h5.492331.com",
-	"https://tsp4.49795.xyz",
-	"https://tsp3.49795.xyz",
-	"https://tsp2.49795.xyz",
-	"https://tsp1.49795.xyz",
-	"https://h5.49760.xyz",
-	"https://h5.49198.xyz",
-	"https://www.172488.com",
-	"https://172488.com",
-	"https://www.853749.com",
-	"https://853749.com",
-	"https://www.945353.com",
-	"https://945353.com",
-	"https://www.2447777.com",
-	"https://2447777.com",
-	"https://www.2449999.com",
-	"https://2449999.com",
-	"https://www.567476.com",
-	"https://567476.com",
-	"https://www.886894.com",
-	"https://886894.com",
-	"https://www.9884444.com",
-	"https://9884444.com",
-	"https://www.9888000.com",
-	"https://9888000.com",
-	"https://www.1473333.com",
-	"https://1473333.com",
-	"https://www.1474444.com",
-	"https://1474444.com",
-	"https://678734.com",
-	"https://www.678734.com",
-	"https://h5.678734.com",
-	"https://www.886143.com",
-	"https://886143.com",
-	"https://www.2888811.com",
-	"https://2888811.com",
-	"https://www.886963.com",
-	"https://886963.com",
-	"https://www.8444333.com",
-	"https://8444333.com",
-	"https://www.8444000.com",
-	"https://8444000.com",
-	"https://www.48282.cc",
-	"https://48282.cc",
-	"https://www.49284.cc",
-	"https://49284.cc",
-	"https://www.www-35545.com",
-	"https://www-35545.com",
-	"https://www.35515.me",
-	"https://35515.me",
-	"https://www.49688.vip",
-	"https://49688.vip",
-	"https://www.155514.com",
-	"https://155514.com",
-	"https://www.122299.com",
-	"https://122299.com",
-	"https://www.177799.com",
-	"https://177799.com",
-	"https://www.322299.com",
-	"https://322299.com",
-	"https://www.611199.com",
-	"https://611199.com",
-	"https://678548.com",
-	"https://www.678548.com",
-	"https://h5.678548.com",
-	"https://456874.com",
-	"https://h5.499053.com",
-	"https://www.456874.com",
-	"https://h5.456874.com",
-	"https://www.499053.com",
-	"https://499053.com",
-	"https://www.1475555.com",
-	"https://1475555.com",
-	"https://www.1469999.com",
-	"https://1469999.com",
-	"https://www.468345.com",
-	"https://468345.com",
-	"https://www.468345.cc",
-	"https://468345.cc",
-	"https://h5.498511.com",
-	"https://www.498511.com",
-	"https://498511.com",
-	"https://www.960234.vip",
-	"https://960234.vip",
-	"https://www.960234.cc",
-	"https://960234.cc",
-	"https://960234.com",
-	"https://www.960234.com",
-	"https://lhjt.49746.xyz",
-	"https://ayysq.49746.xyz",
-	"https://h6.49746.xyz",
-	"https://h5.49746.xyz",
-	"https://iiiiiiiiiiiiii.49290.cyou"],
- 	"彩民网": [
-	"https://99550149.com",
-	"https://iiiiiiiiiiiiiiiii.99550149.com",
-	"https://iiiiiiiiiiiiiiiii.49875.cyou",
-	"https://iiiiiiiiiiiiiiiii.490375.cyou",
-	"https://iiiiiiiiiiiiiiiii.490376.cyou",	
-	"https://iiiiiiiiiiiiiiiii.yujiansy.com",
-	"https://iiiiiiiiiiiiiiiii.flozfloz.com",
-	"https://iiiiiiiiiiiiiiiii.490072.cyou",
-	"https://iiiiiiiiiiiiiiiii.49887.cyou"],
-	"大三巴": [
-	"https://38557.com",
-	"https://iiiiiiiiiiiiiiiii.38798.com",
-	"https://iiiiiiiiiiiiiiiii.49819.cyou",
-	"https://iiiiiiiiiiiiiiiii.38986.com",
-	"https://iiiiiiiiiiiiiiiii.38557.com",
-	"https://38798.com",
-	"https://38986.com",
-	"https://iiiiiiiiiiiiiiiii.49530.cyou",
-	"https://iiiiiiiiiiiiiiiii.490341.cyou",
-	"https://iiiiiiiiiiiiiiiii.490342.cyou",	
-	"https://iiiiiiiiiiiiiiiii.490052.cyou",
-	"https://iiiiiiiiiiiiiiiii.eiojz.com",
-	"https://iiiiiiiiiiiiiiiii.ylbxwjh.com",
-	"https://iiiiiiiiiiiiiiiii.mintailabor.com",
-	"https://iiiiiiiiiiiiiiiii.hwfx005.com",
-	"https://iiiiiiiiiiiiiiiii.hmqdjp.com",
-	"https://iiiiiiiiiiiiiiiii.h20heol.com",
-	"https://iiiiiiiiiiiiiiiii.puge54.com",
-	"https://iiiiiiiiiiiiiiiii.vexorss.com",
-	"https://iiiiiiiiiiiiiiiii.sxfkmy.com",
-	"https://iiiiiiiiiiiiiiiii.49532.cyou",
-	"https://iiiiiiiiiiiiiiiii.49531.cyou"],
-};
+<script>
+/* ============================================================
+   NHÓM 1: 王中王
+   ============================================================ */
+const GROUP_1 = `
+https://iiiiiiiiiiiiii.49778.cyou
+https://iiiiiiiiiiiiii.89884.com
+https://89884.com
+https://iiiiiiiiiiiiii.975456.com
+https://www.975456.men
+https://975456.men
+https://www.975456.cc
+https://975456.cc
+https://975456.com
+https://www.975456.com
+https://iiiiiiiiiiiiii.49297.cyou
+https://iiiiiiiiiiiiii.49241.cyou
+https://iiiiiiiiiiiiii.49584.top
+https://iiiiiiiiiiiiii.49148.cyou
+https://iiiiiiiiiiiiii.49089.cyou
+https://iiiiiiiiiiiiii.49035.cyou
+https://iiiiiiiiiiiiii.49026.cyou
+https://iiiiiiiiiiiiii.49878.top
+https://iiiiiiiiiiiiii.49786.top
+https://iiiiiiiiiiiiii.49752.top
+https://iiiiiiiiiiiiii.49692.top
+https://iiiiiiiiiiiiii.49511.top
+https://iiiiiiiiiiiiii.49059.top
+https://iiiiiiiiiiiiii.4249.men
+https://lhjt.4948.men
+https://faike.4948.men
+https://h8.49806.xyz
+https://h7.49806.xyz
+https://h6.49806.xyz
+https://h5.49806.xyz
+https://wzw4.49806.xyz
+https://wzw3.49806.xyz
+https://wzw2.49806.xyz
+https://wzw1.49806.xyz
+https://3zu.49032.xyz
+https://853349.com
+https://www.532349.com
+https://532349.com
+https://www.857949.com
+https://857949.com
+https://www.945959.com
+https://945959.com
+https://www.853349.com
+https://www.862049.com
+https://862049.com
+https://www.861949.com
+https://861949.com
+https://www.2333300.com
+https://2333300.com
+https://www.2333311.com
+https://2333311.com
+https://www.2333322.com
+https://2333322.com
+https://www.567486.com
+https://567486.com
+https://www.886843.com
+https://886843.com
+https://www.886470.com
+https://886470.com
+https://h5.886470.com
+https://h5.532349.com
+https://www.886394.com
+https://886394.com
+https://www.886175.com
+https://886175.com
+https://www.886174.com
+https://886174.com
+https://www.886190.com
+https://886190.com
+https://www.7222444.com
+https://7222444.com
+https://www.7222111.com
+https://7222111.com
+https://www.7222000.com
+https://7222000.com
+https://www.49285.cc
+https://49285.cc
+https://www.49382.cc
+https://49382.cc
+https://www.49488.vip
+https://49488.vip
+https://www.855577.com
+https://855577.com
+https://www.55382.org
+https://55382.org
+https://www.55382.me
+https://55382.me
+https://www.299977.com
+https://299977.com
+https://www.811177.com
+https://811177.com
+https://www.833377.com
+https://833377.com
+https://www.911177.com
+https://911177.com
+https://www.866677.com
+https://866677.com
+https://www.55382.vip
+https://55382.vip
+https://www.2333344.com
+https://2333344.com
+https://www.2333355.com
+https://2333355.com
+https://www.456904.com
+https://456904.com
+https://h5.456904.com
+https://www.2333366.com
+https://2333366.com
+https://www.2333377.com
+https://2333377.com
+https://www.499810.com
+https://499810.com
+https://h5.499810.com
+https://www.294340.com
+https://h5.294340.com
+https://294340.com
+https://wzw.xn--i1b8agg9e6a1e2cdx1h.xn--h2brj9c
+https://iiiiiiiiiiiiii.49232.link
+https://tiaozhaun92.49738.xyz
+https://h6.49738.xyz
+https://h5.49738.xyz
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 2: 王中王
+   ============================================================ */
+const GROUP_2 = `
+https://63229.com
+https://www.63229.com
+https://iiiiiiiiiiiiii.63229.com
+https://iiiiiiiiiiiiii.49263.link
+https://iiiiiiiiiiiiii.49094.top
+https://iiiiiiiiiiiiii.49021.link
+https://iiiiiiiiiiiiii.49326.cyou
+https://iiiiiiiiiiiiii.149567.com
+https://iiiiiiiiiiiiii.49811.cyou
+https://149567.cc
+https://www.149567.cc
+https://149567.com
+https://www.149567.com
+https://iiiiiiiiiiiiii.49263.link
+https://iiiiiiiiiiiiii.49117.cyou
+https://iiiiiiiiiiiiii.49604.top
+https://iiiiiiiiiiiiii.49659.top
+https://iiiiiiiiiiiiii.49479.top
+https://iiiiiiiiiiiiii.49094.top
+https://iiiiiiiiiiiiii.49021.link
+https://h6.49887.xyz
+https://h5.49887.xyz
+https://h5.49313.xyz
+https://yh65-2.xn--v1bm3av2dc7aue0dcdk3qi.xn--h2brj9c
+https://4777700.com
+https://www.4777711.com
+https://4777711.com
+https://www.886485.com
+https://886485.com
+https://h5.886485.com
+https://www.633849.com
+https://633849.com
+https://h5.633849.com
+https://www.4777722.com
+https://4777722.com
+https://www.4777733.com
+https://4777733.com
+https://www.789834.com
+https://789834.com
+https://h5.789834.com
+https://www.4777744.com
+https://4777744.com
+https://www.499717.com
+https://499717.com
+https://h5.499717.com
+https://www.293948.com
+https://293948.com
+https://h5.293948.com
+https://www.49398.cc
+https://49398.cc
+https://www.498507.com
+https://www.26249.cc
+https://498507.com
+https://26249.cc
+https://h5.498507.com
+https://www.52549.cc
+https://www.4777755.com
+https://52549.cc
+https://4777755.com
+https://www.226849.com
+https://226849.com
+https://www.546488.com
+https://546488.com
+https://www.546488.cc
+https://546488.cc
+https://www.265649.com
+https://265649.com
+https://www.632649.com
+https://632649.com
+https://www.528349.com
+https://528349.com
+https://www.547488.com
+https://547488.com
+https://www.547488.cc
+https://5zu-10.xn--11bt2brb7fm5d.xn--h2brj9c
+https://547488.cc
+https://www.664524.com
+https://664524.com
+https://www.49398.vip
+https://49398.vip
+https://www.8999000.com
+https://8999000.com
+https://www.8999222.com
+https://8999222.com
+https://www.789421.com
+https://789421.com
+https://www.885706.com
+https://885706.com
+https://www.9111333.com
+https://9111333.com
+https://www.9333111.com
+https://9333111.com
+https://www.4777700.com
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 3: 曾道人
+   ============================================================ */
+const GROUP_3 = `
+https://66550149.com
+https://iiiiiiiiiiiiiiiiii.66550149.com
+https://66990149.com
+https://iiiiiiiiiiiiiiiiii.66990149.com
+https://98554.com
+https://www.807234.com
+https://807234.com
+https://807234.cc
+https://www.807234.cc
+https://69234.vip
+https://www.69234.vip
+https://iiiiiiiiiiiiiiiiii.807234.com
+https://98554.com
+https://iiiiiiiiiiiiiiiiii.98554.com
+https://iiiiiiiiiiiiiiiiii.490416.cyou
+https://iiiiiiiiiiiiiiiiii.490175.cyou
+https://iiiiiiiiiiiiiiiiii.490024.cyou
+https://iiiiiiiiiiiiiiiiii.49848.cyou
+https://lhjt.49901.men
+https://iiiiiiiiiiiiiiiiii.49598.xyz
+https://tz2.49598.xyz
+https://xcstz-3.xn--21b5ar1c7a2c.xn--h2brj9c
+https://iiiiiiiiiiiiiiiiii.vsiium.com
+https://iiiiiiiiiiiiiiiiii.tmeagh.com
+https://iiiiiiiiiiiiiiiiii.490220.cyou
+https://iiiiiiiiiiiiiiiiii.49948.cyou
+https://iiiiiiiiiiiiiiiiii.49753.cyou
+https://iiiiiiiiiiiiiiiiii.49264.cyou
+https://iiiiiiiiiiiiiiiiii.49057.cyou
+https://iiiiiiiiiiiiiiiiii.49030.cyou
+https://iiiiiiiiiiiiiiiiii.49849.top
+https://iiiiiiiiiiiiiiiiii.49548.top
+https://iiiiiiiiiiiiiiiiii.49025.top
+https://iiiiiiiiiiiiiiiiii.49050.link
+https://h6.49166.xyz
+https://h5.49498.xyz
+https://h5.49166.xyz
+https://2zu.49024.xyz
+https://6782266.com
+https://www.6782266.com
+https://www.6923411.com
+https://6923411.com
+https://www.69234dh.com
+https://69234dh.com
+https://294221.com
+https://www.69234.vip
+https://www.294221.com
+https://69234.vip
+https://h5.294221.com
+https://www.6923400.com
+https://499851.com
+https://6923400.com
+https://www.499851.com
+https://www.6923433.com
+https://h5.499851.com
+https://6923433.com
+https://h5.499038.com
+https://www.499038.com
+https://499038.com
+https://www.6923422.com
+https://www.6781166.com
+https://6781166.com
+https://478986.com
+https://www.015551.com
+https://www.478986.com
+https://015551.com
+https://6923422.com
+https://478983.com
+https://www.49572.cc
+https://iiiiiiiiiiiiiiiiii.490221.cyou
+https://3553552.com
+https://49572.cc
+https://wz.6923433.com
+https://2667799.com
+https://www.3553552.com
+https://www.2667799.com
+https://wz.6923422.com
+https://www.69234.co
+https://www.12666888.com
+https://www.886023.com
+https://886023.com
+https://69234.co
+https://122609.com
+https://www.122609.com
+https://www.5858234.com
+https://www.69234.biz
+https://122509.com
+https://5858234.com
+https://69234.biz
+https://www.122509.com
+https://www.5858456.com
+https://5858456.com
+https://69234g.com
+https://www.69234g.com
+https://www.5858567.com
+https://69234f.com
+https://5858567.com
+https://www.69234f.com
+https://69234e.com
+https://www.69234e.com
+https://69234d.com
+https://www.69234d.com
+https://69234c.com
+https://www.69234c.com
+https://34999.vip
+https://www.34999.vip
+https://69234b.com
+https://www.69234b.com
+https://69234a.com
+https://www.69234a.com
+https://h5.492150.com
+https://478980.com
+https://www.492150.com
+https://www.478980.com
+https://492150.com
+https://www.478983.com
+https://www.69234dh.org
+https://69234dh.org
+https://xcs.xn--i1baa8eb1gc3a1bbuxfs1g0ee8b0hdbg.xn--h2brj9c
+https://yh12-1.xn--11bag4cycbd2b1a2dddcef3t.xn--h2brj9c
+https://xcs.xn----rtd0d9chn7e2al6d2dsa.xn--h2brj9c
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 4: 大赢家
+   ============================================================ */
+const GROUP_4 = `
+https://99660149.com
+https://iiiiiiiiiiiii.99660149.com
+https://iiiiiiiiiiiii.993234.com
+https://80776.com
+https://iiiiiiiiiiiii.80776.com
+https://www.993234.cc
+https://www.993234.com
+https://993234.com
+https://993234.cc
+https://562456.com
+https://497004.com
+https://iiiiiiiiiiiii.562456.com
+https://497003.com
+https://www.497003.com
+https://iiiiiiiiiiiii.497003.com
+https://497004.com
+https://www.497004.com
+https://iiiiiiiiiiiii.497004.com
+https://82447.com
+https://www.723234.com
+https://723234.com
+https://723234.cc
+https://www.723234.cc
+https://723234.vip
+https://www.723234.vip
+https://iiiiiiiiiiiii.723234.com
+https://iiiiiiiiiiiii.82447.com
+https://iiiiiiiiiiiii.49876.cyou
+https://iiiiiiiiiiiii.490373.cyou
+https://iiiiiiiiiiiii.490374.cyou	
+https://iiiiiiiiiiiii.49281.link
+https://iiiiiiiiiiiii.49274.link
+https://lhjt.4986.men
+https://iiiiiiiiiiiii.49857.cyou
+https://lqrtz-3.xn--m1b3ddm1b8arfh0ch5a6gwc.xn--h2brj9c
+https://iiiiiiiiiiiii.nukpinl.com
+https://iiiiiiiiiiiii.ioolknp.com
+https://iiiiiiiiiiiii.49888.cyou
+https://iiiiiiiiiiiii.49831.cyou
+https://iiiiiiiiiiiii.49350.cyou
+https://iiiiiiiiiiiii.49226.cyou
+https://iiiiiiiiiiiii.49138.cyou
+https://iiiiiiiiiiiii.49760.top
+https://iiiiiiiiiiiii.49639.top
+https://iiiiiiiiiiiii.49458.top
+https://sz1.49803.xyz
+https://sz2.49803.xyz
+https://sz3.49803.xyz
+https://iiiiiiiiiiiii.49116.top
+https://iiiiiiiiiiiii.49001.link
+https://sz4.49803.xyz
+https://sz3.49803.xyz
+https://sz2.49803.xyz
+https://sz1.49803.xyz
+https://sz.xn--i1b4cvbirku8hya2ci.xn--h2brj9c
+https://491912.com
+https://www.491912.com
+https://h5.491912.com
+https://499875.com
+https://www.499875.com
+https://h5.499875.com
+https://2235555.com
+https://www.2235555.com
+https://h5.832366.cc
+https://h5.668147.com
+https://832366.cc
+https://668147.com
+https://www.668147.com
+https://3000033.com
+https://www.3000033.com
+https://3000022.com
+https://www.3000022.com
+https://3000011.com
+https://www.3000011.com
+https://523049.com
+https://886763.com
+https://www.523049.com
+https://www.886763.com
+https://525949.com
+https://885376.com
+https://www.525949.com
+https://www.885376.com
+https://566749.com
+https://www.832366.cc
+https://664416.com
+https://www.566749.com
+https://www.664416.com
+https://253511.cc
+https://2234444.com
+https://154488.com
+https://www.253511.cc
+https://www.154488.com
+https://www.2234444.com
+https://253511.com
+https://2231111.com
+https://www.253511.com
+https://519949.com
+https://252249.com
+https://www.2231111.com
+https://www.252249.com
+https://www.519949.com
+https://h5.252249.com
+https://49936.cc
+https://www.49936.cc
+https://3000044.com
+https://49935.cc
+https://www.3000044.com
+https://www.49935.cc
+https://h5.49244.xyz
+https://iiiiiiiiiiiii.49830.cyou
+https://iiiiiiiiiiiii.49444.cyou
+https://iiiiiiiiiiiii.49440.cyou
+https://iiiiiiiiiiiii.49434.cyou
+https://iiiiiiiiiiiii.49389.cyou
+https://iiiiiiiiiiiii.49349.cyou
+https://iiiiiiiiiiiii.49137.cyou
+https://iiiiiiiiiiiii.49754.top
+https://iiiiiiiiiiiii.49643.top
+https://iiiiiiiiiiiii.49460.top
+https://iiiiiiiiiiiii.49332.top
+https://iiiiiiiiiiiii.49120.top
+https://iiiiiiiiiiiii.49011.link
+https://cbg4.49779.xyz
+https://cbg3.49779.xyz
+https://cbg2.49779.xyz
+https://cbg1.49779.xyz
+https://h5.49321.xyz
+https://cbg.xn--71brlj3e9a4a9ad7b.xn--h2brj9c
+https://6373333.com
+https://www.6373333.com
+https://h5.499176.com
+https://499176.com
+https://www.499176.com
+https://499089.com
+https://www.499089.com
+https://h5.499089.com
+https://6372222.com
+https://www.6372222.com
+https://6371111.com
+https://www.6371111.com
+https://886903.com
+https://www.886903.com
+https://h5.886903.com
+https://h5.678873.com
+https://678873.com
+https://www.678873.com
+https://h5.678840.com
+https://678840.com
+https://www.678840.com
+https://2554444.com
+https://www.2554444.com
+https://h5.668101.com
+https://668101.com
+https://www.668101.com
+https://2774444.com
+https://www.2774444.com
+https://2664444.com
+https://www.2664444.com
+https://2661111.com
+https://www.2661111.com
+https://2551111.com
+https://www.2551111.com
+https://857649.com
+https://www.857649.com
+https://27949.cc
+https://www.27949.cc
+https://49576.cc
+https://www.49576.cc
+https://49574.cc
+https://www.49574.cc
+https://2664444.com
+https://www.2664444.com
+https://2661111.com
+https://www.2661111.com
+https://2551111.com
+https://www.2551111.com
+https://857649.com
+https://www.857649.com
+https://27949.cc
+https://www.27949.cc
+https://49576.cc
+https://www.49576.cc
+https://49574.cc
+https://www.49574.cc
+https://iiiiiiiiiiiii.49825.cyou
+https://iiiiiiiiiiiii.49344.cyou
+https://iiiiiiiiiiiii.49132.cyou
+https://iiiiiiiiiiiii.49017.cyou
+https://iiiiiiiiiiiii.49748.top
+https://iiiiiiiiiiiii.49764.top
+https://iiiiiiiiiiiii.49641.top
+https://iiiiiiiiiiiii.49464.top
+https://iiiiiiiiiiiii.49111.top
+https://iiiiiiiiiiiii.2549.men
+https://iiiiiiiiiiiii.490071.cyou	
+https://lqr4.49784.xyz
+https://lqr3.49784.xyz
+https://lqr2.49784.xyz
+https://lqr1.49784.xyz
+https://www.886242.com
+https://789576.com
+https://h5.49167.xyz
+https://1777766.com
+https://www.1777766.com
+https://49624.cc
+https://www.49624.cc
+https://www.578511.com
+https://468511.com
+https://www.468511.com
+https://h5.886490.com
+https://886490.com
+https://www.886490.com
+https://8222111.com
+https://www.8222111.com
+https://3777766.com
+https://www.3777766.com
+https://6462222.com
+https://6464444.com
+https://578511.com
+https://49962.cc
+https://www.49962.cc
+https://www.6464444.com
+https://49483.cc
+https://www.6462222.com
+https://www.49483.cc
+https://492245.com
+https://233355.com
+https://www.233355.com
+https://www.492245.com
+https://49623.cc
+https://h5.492245.com
+https://www.49623.cc
+https://499726.com
+https://886242.com
+https://34877.vip
+https://www.499726.com
+https://www.34877.vip
+https://h5.499726.com
+https://6461111.com
+https://www.6461111.com
+https://h5.499054.com
+https://422217.com
+https://499054.com
+https://www.499054.com
+https://www.422217.com
+https://h5.789576.com
+https://www.789576.com
+https://h5.886242.com
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 5: 聚彩堂
+   ============================================================ */
+const GROUP_5 = `
+https://88550149.com
+https://iiiiiiiiiiiii.88550149.com
+https://88770149.com
+https://iiiiiiiiiiiii.88770149.com
+https://597456.com
+https://www.597456.com
+https://iiiiiiiiiiiii.597456.com
+https://597456.cc
+https://www.597456.cc
+https://491005.com
+https://www.491005.com
+https://iiiiiiiiiiiii.491005.com
+https://492005.com
+https://www.492005.com
+https://iiiiiiiiiiiii.492005.com
+https://iiiiiiiiiiiii.490168.cyou
+https://iiiiiiiiiiiii.490128.cyou
+https://iiiiiiiiiiiii.49261.link
+https://iiiiiiiiiiiii.hnqtxy.com
+https://iiiiiiiiiiiii.eqvfk.com
+https://iiiiiiiiiiiii.490334.cyou
+https://iiiiiiiiiiiii.490333.cyou
+https://iiiiiiiiiiiii.490048.cyou
+https://iiiiiiiiiiiii.49815.cyou
+https://iiiiiiiiiiiii.49335.cyou
+https://iiiiiiiiiiiii.49123.cyou
+https://iiiiiiiiiiiii.49625.top
+https://iiiiiiiiiiiii.49658.top
+https://iiiiiiiiiiiii.49469.top
+https://iiiiiiiiiiiii.49104.top
+https://iiiiiiiiiiiii.49029.link
+https://h6.49870.xyz
+https://h6.49302.xyz
+https://h5.49870.xyz
+https://h5.49302.xyz
+https://5zu.49021.xyz
+https://www.886494.com
+https://886494.com
+https://h5.886494.com
+https://www.668046.com
+https://668046.com
+https://h5.668046.com
+https://www.49573.cc
+https://49573.cc
+https://h5.636649.com
+https://www.49575.cc
+https://www.678701.com
+https://49575.cc
+https://678701.com
+https://h5.678701.com
+https://www.27649.cc
+https://27649.cc
+https://678864.com
+https://www.735488.com
+https://www.678864.com
+https://735488.com
+https://www.735488.cc
+https://h5.678864.com
+https://735488.cc
+https://886801.com
+https://www.636649.com
+https://www.886801.com
+https://636649.com
+https://h5.886801.com
+https://www.526949.com
+https://www.6353333.com
+https://526949.com
+https://6353333.com
+https://www.855649.com
+https://www.6357777.com
+https://855649.com
+https://www.736488.com
+https://6357777.com
+https://736488.com
+https://www.6361111.com
+https://6361111.com
+https://h5.499865.com
+https://www.499865.com
+https://www.2443333.com
+https://499865.com
+https://2443333.com
+https://h5.491772.com
+https://www.2445555.com
+https://www.491772.com
+https://491772.com
+https://2445555.com
+https://www.6352222.com
+https://www.664541.com
+https://664541.com
+https://6352222.com
+https://www.789452.com
+https://789452.com
+https://www.885806.com
+https://885806.com
+https://www.886244.com
+https://886244.com
+https://ydh.xn----rtd0dh7dbbb8aq8ah9a2jtcbddn7b3ixa.xn--h2brj9c
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 6: 金钥匙
+   ============================================================ */
+const GROUP_6 = `
+https://lhjt.49922.men
+https://www.729456.cc
+https://729456.cc
+https://729456.com
+https://www.729456.com
+https://497012.com
+https://www.497012.com
+https://iiiiiiiiiiiiii.497012.com
+https://iiiiiiiiiiiii.729456.com
+https://iiiiiiiiiiiii.49271.link
+https://iiiiiiiiiiiii.49122.cyou
+https://iiiiiiiiiiiii.490331.cyou
+https://iiiiiiiiiiiii.490332.cyou
+https://iiiiiiiiiiiii.490127.cyou
+https://iiiiiiiiiiiii.49655.top
+https://iiiiiiiiiiiii.49585.top
+https://iiiiiiiiiiiii.49472.top
+https://iiiiiiiiiiiii.49100.top
+https://iiiiiiiiiiiii.490047.cyou
+https://lhjt.49951.men
+https://h6.49904.xyz
+https://h5.49904.xyz
+https://h5.49296.xyz
+https://www.789436.com
+https://789436.com
+https://www.885769.com
+https://885769.com
+https://www.8777000.com
+https://8777000.com
+https://www.8777222.com
+https://www.49529.cc
+https://49529.cc
+https://www.49537.cc
+https://49537.cc
+https://www.27249.cc
+https://27249.cc
+https://www.675488.cc
+https://675488.cc
+https://1054444.com
+https://664287.com
+https://www.668445.com
+https://www.647349.com
+https://www.8666000.com
+https://668445.com
+https://8666000.com
+https://647349.com
+https://www.8666111.com
+https://www.526749.com
+https://h5.678493.com
+https://www.886760.com
+https://h5.668445.com
+https://526749.com
+https://886760.com
+https://h5.886760.com
+https://h5.647349.com
+https://www.479456.com
+https://479456.com
+https://www.678493.com
+https://www.479456.cc
+https://479456.cc
+https://h5.491754.com
+https://www.491754.com
+https://678493.com
+https://www.676488.cc
+https://491754.com
+https://www.499764.com
+https://676488.cc
+https://8666111.com
+https://www.664287.com
+https://www.675488.com
+https://499764.com
+https://h5.499764.com
+https://675488.com
+https://8777222.com
+https://www.668212.com
+https://668212.com
+https://h5.668212.com
+https://www.1051111.com
+https://1051111.com
+https://www.1054444.com
+https://iiiiiiiiiiiiiii.49334.cyou
+https://jys.xn--m1b6h.xn--h2brj9c
+https://asdfghjklzxcv.49814.cyou
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 7: 红姐论坛
+   ============================================================ */
+const GROUP_7 = `
+https://hj.xn--m1bc1gh4c3af9dbce7o.xn--h2brj9c
+https://iiiiiiiiiiiii.49662.top
+https://iiiiiiiiiiiii.49588.top
+https://iiiiiiiiiiiii.49480.top
+https://www.727456.com
+https://iiiiiiiiiiiii.49095.top
+https://iiiiiiiiiiiii.49116.cyou
+https://iiiiiiiiiiiii.490123.cyou
+https://iiiiiiiiiiiii.490323.cyou
+https://iiiiiiiiiiiii.490324.cyou
+https://iiiiiiiiiiiii.490043.cyou
+https://iiiiiiiiiiiii.49810.cyou
+https://iiiiiiiiiiiii.5949.men
+https://hjlt.4962.men
+https://hjzd.4953.men
+https://h6.49295.xyz
+https://h6.49880.xyz
+https://h5.49880.xyz
+https://www.668202.com
+https://h5.49295.xyz
+https://5zu.49056.xyz
+https://668202.com
+https://1212sgs.76069.com
+https://76069.com
+https://aaadddd.727456.com
+https://727456.vip
+https://www.727456.vip
+https://727456.com
+https://www.499763.com
+https://499763.com
+https://h5.499763.com
+https://www.319456.com
+https://319456.com
+https://www.319456.cc
+https://319456.cc
+https://www.328456.com
+https://www.49528.cc
+https://328456.com
+https://www.328456.cc
+https://49528.cc
+https://328456.cc
+https://h5.491743.com
+https://www.49528.vip
+https://www.491743.com
+https://49528.vip
+https://491743.com
+https://www.26949.cc
+https://www.616488.com
+https://www.820366.cc
+https://26949.cc
+https://616488.com
+https://820366.cc
+https://www.616488.cc
+https://www.615488.cc
+https://h5.820366.cc
+https://www.886756.com
+https://615488.cc
+https://616488.cc
+https://886756.com
+https://www.627349.com
+https://www.862849.com
+https://www.567498.com
+https://h5.886756.com
+https://862849.com
+https://567498.com
+https://www.7666444.com
+https://www.2555000.com
+https://7666444.com
+https://www.615488.com
+https://2555000.com
+https://www.8324444.com
+https://615488.com
+https://www.2555222.com
+https://8324444.com
+https://www.789435.com
+https://2555222.com
+https://627349.com
+https://789435.com
+https://www.526649.com
+https://www.885720.com
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 8: 铁算盘
+   ============================================================ */
+const GROUP_8 = `
+https://iiiiiiiiiiiiii.49774.cyou
+https://iiiiiiiiiiiiii.95335.com
+https://www.95335.com
+https://95335.com
+https://iiiiiiiiiiiiii.49184.cyou
+https://iiiiiiiiiiiiii.49157.cyou
+https://iiiiiiiiiiiiii.490093.cyou
+https://iiiiiiiiiiiiii.490246.cyou
+https://iiiiiiiiiiiiii.490247.cyou	
+https://iiiiiiiiiiiiii.49082.cyou
+https://iiiiiiiiiiiiii.49966.cyou	
+https://iiiiiiiiiiiiii.49815.top
+https://iiiiiiiiiiiiii.49319.top
+https://iiiiiiiiiiiiii.49772.top
+https://iiiiiiiiiiiiii.49696.top
+https://iiiiiiiiiiiiii.49434.top
+https://iiiiiiiiiiiiii.49521.top
+https://iiiiiiiiiiiiii.49058.top
+https://iiiiiiiiiiiiii.4349.men
+https://iiiiiiiiiiiiii.960234.com
+https://iiiiiiiiiiiiii.49099.link
+https://lhsoa.492331.com
+https://h6.492236.com
+https://h6.492331.com
+https://h5.492236.com
+https://h5.492331.com
+https://tsp4.49795.xyz
+https://tsp3.49795.xyz
+https://tsp2.49795.xyz
+https://tsp1.49795.xyz
+https://h5.49760.xyz
+https://h5.49198.xyz
+https://www.172488.com
+https://172488.com
+https://www.853749.com
+https://853749.com
+https://www.945353.com
+https://945353.com
+https://www.2447777.com
+https://2447777.com
+https://www.2449999.com
+https://2449999.com
+https://www.567476.com
+https://567476.com
+https://www.886894.com
+https://886894.com
+https://www.9884444.com
+https://9884444.com
+https://www.9888000.com
+https://9888000.com
+https://www.1473333.com
+https://1473333.com
+https://www.1474444.com
+https://1474444.com
+https://678734.com
+https://www.678734.com
+https://h5.678734.com
+https://www.886143.com
+https://886143.com
+https://www.2888811.com
+https://2888811.com
+https://www.886963.com
+https://886963.com
+https://www.8444333.com
+https://8444333.com
+https://www.8444000.com
+https://8444000.com
+https://www.48282.cc
+https://48282.cc
+https://www.49284.cc
+https://49284.cc
+https://www.www-35545.com
+https://www-35545.com
+https://www.35515.me
+https://35515.me
+https://www.49688.vip
+https://49688.vip
+https://www.155514.com
+https://155514.com
+https://www.122299.com
+https://122299.com
+https://www.177799.com
+https://177799.com
+https://www.322299.com
+https://322299.com
+https://www.611199.com
+https://611199.com
+https://678548.com
+https://www.678548.com
+https://h5.678548.com
+https://456874.com
+https://h5.499053.com
+https://www.456874.com
+https://h5.456874.com
+https://www.499053.com
+https://499053.com
+https://www.1475555.com
+https://1475555.com
+https://www.1469999.com
+https://1469999.com
+https://www.468345.com
+https://468345.com
+https://www.468345.cc
+https://468345.cc
+https://h5.498511.com
+https://www.498511.com
+https://498511.com
+https://www.960234.vip
+https://960234.vip
+https://www.960234.cc
+https://960234.cc
+https://960234.com
+https://www.960234.com
+https://lhjt.49746.xyz
+https://ayysq.49746.xyz
+https://h6.49746.xyz
+https://h5.49746.xyz
+https://iiiiiiiiiiiiii.49290.cyou
+`.trim().split('\n');
+/* ============================================================
+   NHÓM 9: 大三巴
+   ============================================================ */
+const GROUP_9 = `
+https://38557.com
+https://iiiiiiiiiiiiiiiii.38798.com
+https://iiiiiiiiiiiiiiiii.49819.cyou
+https://iiiiiiiiiiiiiiiii.38986.com
+https://iiiiiiiiiiiiiiiii.38557.com
+https://38798.com
+https://38986.com
+https://iiiiiiiiiiiiiiiii.49530.cyou
+https://iiiiiiiiiiiiiiiii.490341.cyou
+https://iiiiiiiiiiiiiiiii.490342.cyou	
+https://iiiiiiiiiiiiiiiii.490052.cyou
+https://iiiiiiiiiiiiiiiii.eiojz.com
+https://iiiiiiiiiiiiiiiii.ylbxwjh.com
+https://iiiiiiiiiiiiiiiii.mintailabor.com
+https://iiiiiiiiiiiiiiiii.hwfx005.com
+https://iiiiiiiiiiiiiiiii.hmqdjp.com
+https://iiiiiiiiiiiiiiiii.h20heol.com
+https://iiiiiiiiiiiiiiiii.puge54.com
+https://iiiiiiiiiiiiiiiii.vexorss.com
+https://iiiiiiiiiiiiiiiii.sxfkmy.com
+https://iiiiiiiiiiiiiiiii.49532.cyou
+https://iiiiiiiiiiiiiiiii.49531.cyou
+`.trim().split('\n');
 
-    const pageSize = 20;
-    const groupState = {}; // { "Nhóm 1": currentIndex, ... }
-    const linkDisplay = document.getElementById("linkDisplay");
+/* ===== GOM NHÓM ===== */
+const TABS = [
+  { label: '王中王',  data: GROUP_1 },
+  { label: '满堂红',  data: GROUP_2 },
+  { label: '曾道人',  data: GROUP_3 },
+  { label: '大赢家',  data: GROUP_4 },
+  { label: '聚彩堂',  data: GROUP_5 },
+  { label: '金钥匙',  data: GROUP_6 },
+  { label: '红姐论坛',  data: GROUP_7 },
+  { label: '铁算盘',  data: GROUP_8 },
+  { label: '大三巴',  data: GROUP_9 }
+];
 
-    // Khởi tạo nút nhóm
-    const groupButtonsContainer = document.getElementById("groupButtons");
-    for (const groupName in linkGroups) {
-      groupState[groupName] = 0; // bắt đầu từ 0
-      const btn = document.createElement('button');
-      btn.textContent = groupName;
-      btn.onclick = () => handleGroupClick(groupName);
-      groupButtonsContainer.appendChild(btn);
+/* ===== STATE ===== */
+const BATCH_SIZE = 20;
+let currentTab = 0;
+let currentBatch = 0;
+
+/* ===== HELPERS ===== */
+const $ = id => document.getElementById(id);
+const normalize = url => /^https?:\/\//i.test(url) ? url : 'https://' + url;
+
+/* ===== RENDER TABS ===== */
+function renderTabs(){
+  const box = $('tabs');
+  box.innerHTML = '';
+  TABS.forEach((tab, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = tab.label;
+    btn.classList.toggle('active', i === currentTab);
+    btn.onclick = () => switchTab(i);
+    box.appendChild(btn);
+  });
+}
+
+/* ===== CHUYỂN BATCH (dùng cho cả số, ◀, ▶) ===== */
+function goBatch(i){
+  const links = TABS[currentTab].data;
+  const pages = Math.ceil(links.length / BATCH_SIZE);
+  if (i < 0 || i >= pages) return;
+  currentBatch = i;
+  render();
+  loadAllCurrent();
+}
+
+/* ===== RENDER BATCH BAR ===== */
+function renderBatchBar(total){
+  const bar = $('batchBar');
+  bar.innerHTML = '';
+  const pages = Math.ceil(total / BATCH_SIZE);
+
+  const prev = document.createElement('button');
+  prev.textContent = '◀';
+  prev.className = 'nav';
+  prev.disabled = currentBatch === 0;
+  prev.onclick = () => goBatch(currentBatch - 1);
+  bar.appendChild(prev);
+
+  for (let i = 0; i < pages; i++){
+    const btn = document.createElement('button');
+    btn.textContent = i + 1;
+    btn.classList.toggle('active', i === currentBatch);
+    btn.onclick = () => goBatch(i);
+    bar.appendChild(btn);
+  }
+
+  const next = document.createElement('button');
+  next.textContent = '▶';
+  next.className = 'nav';
+  next.disabled = currentBatch === pages - 1;
+  next.onclick = () => goBatch(currentBatch + 1);
+  bar.appendChild(next);
+}
+
+/* ===== LOAD TOÀN BỘ IFRAME TRONG BATCH HIỆN TẠI ===== */
+function loadAllCurrent(){
+  document.querySelectorAll('iframe[data-src]').forEach(f => {
+    f.src = f.dataset.src;
+  });
+}
+
+/* ===== TẠO CARD (OPEN MỞ TAB MỚI - CỐ GẮNG GIỮ FOCUS) ===== */
+function createCard(link){
+  const safe = normalize(link);
+  const card = document.createElement('div');
+  card.className = 'card';
+  
+  card.innerHTML = `
+    <div class="card-header">
+      <a href="${safe}" target="_blank" rel="noopener">${safe}</a>
+      <button class="btn-open-header">OPEN</button>
+    </div>
+    <div class="card-wrap">
+      <div class="iframe-box">
+        <div class="iframe-inner">
+          <iframe data-src="${safe}" loading="lazy"></iframe>
+        </div>
+      </div>
+      <div class="tools">
+        <button class="btn-load">LOAD</button>
+      </div>
+    </div>
+  `;
+
+  const iframe = card.querySelector('iframe');
+  
+  // Nút LOAD: tải iframe
+  card.querySelector('.btn-load').onclick = () => {
+    iframe.src = iframe.dataset.src;
+  };
+
+  // Nút OPEN: mở tab mới và cố gắng giữ focus ở tab hiện tại
+  card.querySelector('.btn-open-header').onclick = () => {
+    const newWindow = window.open(safe, '_blank', 'noopener,noreferrer');
+    if (newWindow) {
+      newWindow.blur();  // Làm mờ cửa sổ mới
+      window.focus();    // Focus lại cửa sổ hiện tại
     }
+  };
 
-    function handleGroupClick(groupName) {
-      const links = linkGroups[groupName];
-      const start = groupState[groupName];
-      const end = start + pageSize;
+  return card;
+}
 
-      // Nếu hết link thì dừng lại
-      if (start >= links.length) {
-        alert("Đã hết link của " + groupName);
-        return;
-      }
+/* ===== RENDER CHÍNH ===== */
+function render(){
+  const links = TABS[currentTab].data;
 
-      // Xoá iframe cũ
-      linkDisplay.innerHTML = '';
+  $('statBatch').textContent = currentBatch + 1;
+  $('statTotal').textContent = links.length;
 
-      const batch = links.slice(start, end);
-      batch.forEach(link => {
-        const container = document.createElement('div');
-        container.className = 'link-container';
+  renderTabs();
+  renderBatchBar(links.length);
 
-        const a = document.createElement('a');
-        a.href = link;
-        a.target = "_blank";
-        a.className = "link-url";
-        a.textContent = link;
+  const grid = $('grid');
+  grid.innerHTML = '';
+  const start = currentBatch * BATCH_SIZE;
+  links.slice(start, start + BATCH_SIZE).forEach(link => {
+    grid.appendChild(createCard(link));
+  });
+}
 
-        const iframe = document.createElement('iframe');
-        iframe.src = link;
-        iframe.className = 'link-iframe';
-        iframe.sandbox = "allow-scripts allow-same-origin";
+/* ===== SWITCH TAB ===== */
+function switchTab(i){
+  currentTab = i;
+  currentBatch = 0;
+  render();
+}
 
-        container.appendChild(a);
-        container.appendChild(iframe);
-        linkDisplay.appendChild(container);
-      });
-
-      // Tăng chỉ số cho lần bấm tiếp theo
-      groupState[groupName] += pageSize;
-    }
-  </script>
-
+/* ===== INIT ===== */
+render();
+</script>
 </body>
 </html>
